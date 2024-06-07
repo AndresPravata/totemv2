@@ -22,6 +22,10 @@ interface veterinarioSelectedState {
   box: number | null;
 }
 
+var sleep = function(ms: number){
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 const Veterinarios = () => {
   const socket = io(`${SOCKET}`);
   const navigate = useNavigate();
@@ -105,6 +109,7 @@ const Veterinarios = () => {
   };
 
   const handleImprimirTurno = async () => {
+
     let veterinarioSeleccionado = veterinarioSelected.veterinario;
     setButtonDisabled(true);
 
@@ -199,6 +204,7 @@ const Veterinarios = () => {
                 Turnos en espera: {cantidadState.box1}
               </p>
             </div>
+            {/*
             <div className="grid gap-3 items-start justify-center">
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-gray-600 to-sky-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-500 group-hover:duration-500 animate-tilt"></div>
@@ -243,6 +249,7 @@ const Veterinarios = () => {
                 Turnos en espera: {cantidadState.box2}
               </p>
             </div>
+            */}
             <div className="grid gap-3 items-start justify-center">
               <div className="bg-gray-500 rounded-md bg-clip-padding backdrop-filter backdrop-blur-lg bg-opacity-0 border border-gray-100 mb-10">
                 <div className="relative group">

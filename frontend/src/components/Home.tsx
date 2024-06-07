@@ -1,10 +1,13 @@
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { HOST } from "@/lib/utils";
+import { HOST, SOCKET } from "@/lib/utils";
+import { io } from "socket.io-client";
+import toast from "react-hot-toast";
 
 const Home = () => {
   const navigate = useNavigate();
+  const socket = io(`${SOCKET}`);
 
   const handleTotem = () => {
     navigate("/totem");
@@ -36,6 +39,13 @@ const Home = () => {
     localStorage.removeItem(`turnoBox1`);
     localStorage.removeItem(`turnoBox2`);
     localStorage.removeItem(`turnoBox4`);
+
+    socket.emit("actualizarBox", { box: "BOX1" });
+    socket.emit("actualizarBox", { box: "BOX2" });
+    socket.emit("actualizarBox", { box: "BOX4" });
+    socket.emit("actualizarTurnos");
+
+    toast.success("Se ha restablecido la aplicación correctamente");
   };
 
   return (

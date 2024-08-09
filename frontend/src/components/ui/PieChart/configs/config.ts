@@ -1,32 +1,21 @@
+// @ts-ignore
 import { ChartOptions, ChartData } from 'chart.js';
 import colors from '@/assets/colors';
+import { Chart } from "@/assets/chartsTypes";
 
-const { dark } = colors;
+const { dark, gradients } = colors;
 
-//type GradientKeys = keyof typeof gradients;
-
-interface Dataset {
-  label: string;
-  data: number[];
-  backgroundColor?: string | string[];
-}
-
-interface ConfigsParams {
-  labels: string[];
-  datasets: Dataset[];
-}
-
-function configs({ labels, datasets }: ConfigsParams) {
+function configs({ labels, datasets }: Chart) {
   const processedDatasets = datasets.map(dataset => {
     let backgroundColors: string[] = [];
 
-    if (dataset.backgroundColor) {
-      if (Array.isArray(dataset.backgroundColor)) {
-        dataset.backgroundColor.forEach(() =>
-          backgroundColors.push(dark.main)
+    if (dataset.color) {
+      if (Array.isArray(dataset.color)) {
+        dataset.color.forEach((c) =>
+          backgroundColors.push(gradients[c].main)
         );
       } else {
-        backgroundColors.push(dark.main);
+        backgroundColors.push(gradients[dataset.color].main);
       }
     } else {
       backgroundColors.push(dark.main);

@@ -1,13 +1,12 @@
 import { useRef, useEffect, useState } from "react";
 import axios from "axios";
-import { Turno } from "./Box1";
-import { HOST, SOCKET } from "@/lib/utils";
-import { io } from "socket.io-client";
+import { HOST, socketConnection } from "@/lib/utils";
+import { Turn } from "./Box";
 
-interface TurnoState {
-  Box1: Turno | null;
-  Box2: Turno | null;
-  Ventas: Turno | null;
+interface Box {
+  title: string;
+  boxesN: number;
+  shortName: boolean;
 }
 
 const audio = new Audio("/sonido-turno.mp3");
@@ -25,50 +24,48 @@ const playTurnChangeSound = (box: string, letra: string) => {
   turno.play();
 };
 
-const Visor = () => {
+const Visor: React.FC<{ boxesToShow: Box[] }> = ({ boxesToShow }) => {
   const videoRef = useRef(null);
-  const [turnoState, setTurnoState] = useState<TurnoState>({
-    Box1: null,
-    Box2: null,
-    Ventas: null,
-  });
+  const [turnState, setTurnState] = useState<Turn[]>([]);
+  const videoPath = '/visor-video.mp4';
 
   const fetchData = async () => {
     try {
       const response = await axios.get(`${HOST}/turnos/turnosVisor`);
-      setTurnoState(response.data);
+      setTurnState(response.data);
     } catch (error) {
-      console.error("Error al obtener los turnos", error);
+      console.error("Error trying to update shifts", error);
     }
   };
 
   useEffect(() => {
-    const socket = io(`${SOCKET}`);
 
-    socket.on("connect", () => {
-      console.log("Conexión Socket.IO establecida con éxito");
+    socketConnection.on("connect", () => {
+      console.log("Conexión socketConnection.IO establecida con éxito");
     });
 
-    socket.on("consultarTurnos", (turno) => {
-      console.log("turnos recibidos correctamente");
+    socketConnection.on("consultarTurnos", (turnos: Turn[]) => {
+      let cambioTurno = turnos
+        .map(({ nombre_turno }: Turn) => {
+          let turnoSplit = nombre_turno ? nombre_turno.split(" ") : [];
+          let box = turnoSplit[1] || "";
 
-      let turnoBox1 = turno?.Box1?.nombre_turno == localStorage.getItem("BOX1State") ? null : turno?.Box1?.nombre_turno;
-      let turnoBox2 = turno?.Box2?.nombre_turno == localStorage.getItem("BOX2State") ? null : turno?.Box2?.nombre_turno;
-      let turnoBoxVentas = turno?.Ventas?.nombre_turno == localStorage.getItem("VentasState") ? null : turno?.Ventas?.nombre_turno
+          return nombre_turno === localStorage.getItem(`${box}State`) ? null : nombre_turno;
+        })
+        .find(turno => turno !== null) || null;
 
-      let cambioTurno = turnoBox1;
-      cambioTurno = (cambioTurno == null) ? turnoBox2 : cambioTurno;
-      cambioTurno = (cambioTurno == null) ? turnoBoxVentas : cambioTurno;
+      let turnoSplit = cambioTurno ? cambioTurno.split(" ") : [];
+      let letra = turnoSplit[0] || "";
+      let box = turnoSplit[1] || "";
 
-      let turnoSplit = cambioTurno ? cambioTurno.split(" ") : null;
-      let box = turnoSplit ? turnoSplit[1] : "";
-      let letra = turnoSplit ? turnoSplit[0] : "";
+      turnos.forEach(({ nombre_turno }: Turn) => {
+        let turnoSplit = nombre_turno ? nombre_turno.split(" ") : [];
+        let box = turnoSplit[1] || "";
 
-      localStorage.setItem("BOX1State", turno?.Box1?.nombre_turno);
-      localStorage.setItem("BOX2State", turno?.Box2?.nombre_turno);
-      localStorage.setItem("VentasState", turno?.Ventas?.nombre_turno);
+        localStorage.setItem(`${box}State`, nombre_turno ?? "null");
+      });
 
-      setTurnoState(turno);
+      setTurnState(turnos);
 
       playNotificationSound();
 
@@ -77,17 +74,18 @@ const Visor = () => {
       }, 2000);
     });
 
-    socket.on("disconnect", () => {
-      console.log("Desconexión Socket.IO");
+    socketConnection.on("disconnect", () => {
+      console.log("Desconexión socketConnection.IO");
     });
 
     return () => {
-      socket.disconnect();
+      socketConnection.disconnect();
     };
   }, []);
 
   useEffect(() => {
     if (videoRef.current) {
+      // @ts-ignore
       videoRef.current.volume = 0.5; // Cambia este valor según sea necesario (0.0 - 1.0)
     }
 
@@ -98,32 +96,19 @@ const Visor = () => {
     <div className="flex h-screen">
       <div className="w-[23%] bg-gray-800 text-white p-4 overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-zinc-950 to-black text-center gap-12 flex flex-col justify-center">
         <div className="flex flex-col gap-9 ml-10">
-          <div className="flex flex-col">
-            <h2 className="text-4xl mb-2 font-semibold uppercase z-50">
-              Veterinaria
-            </h2>
-            <div className="rounded-2xl border-2 text-4xl border-white p-6 my-2 font-bold">
-              {/* GET del turno al que da inicio el veterinario 1 */}
-              {turnoState.Box1?.nombre_turno ?? ""}
+          {boxesToShow.map((box, key) => (
+            <div className="flex flex-col" key={key}>
+              <h2 className="text-4xl mb-2 font-semibold uppercase z-50">
+                {box.title}
+              </h2>
+              {Array.from({ length: box.boxesN }, (_, i) => (
+                <div key={i+10} className="rounded-2xl border-2 text-4xl border-white p-6 my-2 font-bold">
+                  {box.shortName ? turnState[i]?.nombre_turno?.substring(0, turnState[i].nombre_turno?.indexOf('BOX')) : turnState[i]?.nombre_turno}
+                </div>
+              ))}
             </div>
-            <div className="rounded-2xl border-2 text-4xl border-white p-6 my-2 font-bold">
-              {turnoState.Box2?.nombre_turno ?? ""}
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <h2 className="text-4xl mb-2 font-semibold uppercase">Ventas</h2>
-            <div className="rounded-2xl border-2 text-4xl border-white p-6 my-2 font-bold">
-              {turnoState.Ventas?.nombre_turno?.substring(0, turnoState.Ventas?.nombre_turno?.indexOf("BOX")) ?? ""}
-            </div>
-          </div>
+          ))}
         </div>
-
-        {/* <div className="flex flex-col">
-          <h2 className="text-4xl mb-2 font-semibold uppercase">Peluquería</h2>
-          <div className="rounded-2xl border-2 text-3xl border-white p-2 my-2">
-            P1 10:30
-          </div>
-        </div> */}
       </div>
       <div className="w-[80%] g-gray-800 text-white p-4 overflow-hidden bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-900 via-zinc-950 to-black text-center">
         <video
@@ -132,7 +117,7 @@ const Visor = () => {
           loop
           autoPlay
           controls
-          src="/visor-video.mp4"
+          src={videoPath}
         ></video>
       </div>
     </div>

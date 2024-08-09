@@ -2,12 +2,14 @@ import { obtenerActualTurno, obtenerCantidadBox, obtenerInformacionTurno, obtene
 
 let estadoVeterinario = "ausente";
 let estadoVeterinario2 = "ausente";
+let estadoVeterinario3 = "ausente";
 
 export function configureSocketIO(io) {
   io.on("connection", (socket) => {
 
     socket.emit("estadoVeterinario", estadoVeterinario);
     socket.emit("estadoVeterinario2", estadoVeterinario2);
+    socket.emit("estadoVeterinario3", estadoVeterinario3);
 
     socket.on("actualizarTurnos", async () => {
       console.log("Evento 'actualizarTurnos' recibido en el servidor");
@@ -48,6 +50,16 @@ export function configureSocketIO(io) {
     socket.on("veterinario2Ausente", () => {
       estadoVeterinario2 = "ausente";
       io.emit("estadoVeterinario2", estadoVeterinario2);
+    });
+
+    socket.on("veterinario3Presente", () => {
+      estadoVeterinario3 = "presente";
+      io.emit("estadoVeterinario3", estadoVeterinario3);
+    });
+
+    socket.on("veterinario3Ausente", () => {
+      estadoVeterinario3 = "ausente";
+      io.emit("estadoVeterinario3", estadoVeterinario3);
     });
   });
 }

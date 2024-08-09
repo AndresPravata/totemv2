@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
 import axios from "axios";
-import { HOST, SOCKET } from "@/lib/utils";
+import { HOST, socketConnection } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-export interface Turno {
+export interface Turn {
   id: number;
   nombre_turno: string | null;
   createdAt: Date;
@@ -13,42 +12,46 @@ export interface Turno {
   estado: string;
 }
 
-interface TurnoState {
-  actual: Turno | null;
-  siguiente: Turno | null;
+interface TurnState {
+  actual: Turn | null;
+  siguiente: Turn | null;
 }
 
-const Box4 = () => {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [cantidadState, setCantidadState] = useState(0);
-  const [turnoState, setTurnoState] = useState<TurnoState>({
+interface BoxProps {
+  BoxN: number;
+  title: string;
+}
+
+const Box: React.FC<BoxProps> = ({ BoxN, title }) => {
+  const [isPresent, setIsPresent] = useState(false);
+  const [amountState, setAmountState] = useState(0);
+  const [turnState, setTurnState] = useState<TurnState>({
     actual: null,
     siguiente: null,
   });
 
   const fetchData = async () => {
     try {
-      const response = await axios.get(`${HOST}/turnos/turnosBox/C`);
-      const cantidad = await axios.get(`${HOST}/turnos/cantidadTurnos/4`);
+      const response = await axios.get(`${HOST}/turnos/turnosBox/BOX${BoxN === 4 ? 'C' : BoxN}`);
+      const cantidad = await axios.get(`${HOST}/turnos/cantidadTurnos/${BoxN}`);
 
-      setCantidadState(cantidad.data);
+      setAmountState(cantidad.data);
 
-      setTurnoState({
+      setTurnState({
         actual: response.data[0],
         siguiente: response.data[1],
       });
-      socket?.emit("actualizarTurnos");
+      socketConnection?.emit("actualizarTurnos");
     } catch (error) {
-      console.error("Error al obtener los turnos", error);
+      console.error("Error trying to update shifts", error);
     }
   };
 
   const next = async () => {
     try {
-      if (turnoState.actual == null) {
+      if (turnState.actual == null) {
         await axios.put(
-          `${HOST}/turnos/${
-            turnoState.siguiente == null ? 0 : turnoState.siguiente.id
+          `${HOST}/turnos/${turnState.siguiente == null ? 0 : turnState.siguiente.id
           }`,
           {
             estado: "Actual",
@@ -56,8 +59,7 @@ const Box4 = () => {
         );
       } else {
         await axios.put(
-          `${HOST}/turnos/${
-            turnoState.actual == null ? 0 : turnoState.actual.id
+          `${HOST}/turnos/${turnState.actual == null ? 0 : turnState.actual.id
           }`,
           {
             estado: "Finalizado",
@@ -65,8 +67,7 @@ const Box4 = () => {
         );
 
         await axios.put(
-          `${HOST}/turnos/${
-            turnoState.siguiente == null ? 0 : turnoState.siguiente.id
+          `${HOST}/turnos/${turnState.siguiente == null ? 0 : turnState.siguiente.id
           }`,
           {
             estado: "Actual",
@@ -76,106 +77,139 @@ const Box4 = () => {
 
       fetchData();
     } catch (error) {
-      console.error("Error al actualizar el turno", error);
+      console.error("Error trying to update shifts", error);
     }
   };
 
   const start = async () => {
     try {
       const response = await axios.put(
-        `${HOST}/turnos/${
-          turnoState.actual == null ? 0 : turnoState.actual.id
+        `${HOST}/turnos/${turnState.actual == null ? 0 : turnState.actual.id
         }`,
         {
           fecha_hora_inicio: new Date(),
           estado: "Iniciado",
         }
       );
-      toast.success("Turno iniciado");
-      setTurnoState({ ...turnoState, actual: response.data });
+      toast.success("Turn Started");
+      setTurnState({ ...turnState, actual: response.data });
     } catch (error) {
-      console.error("Error al actualizar el turno", error);
+      console.error("Error trying to update shifts", error);
     }
   };
 
   const end = async () => {
     try {
       const response = await axios.put(
-        `${HOST}/turnos/${
-          turnoState.actual == null ? 0 : turnoState.actual.id
+        `${HOST}/turnos/${turnState.actual == null ? 0 : turnState.actual.id
         }`,
         {
           fecha_hora_fin: new Date(),
           estado: "Finalizado",
         }
       );
-      toast.success("Turno finalizado");
-      setTurnoState({ ...turnoState, actual: response.data });
+      toast.success("Turn Finished");
+      setTurnState({ ...turnState, actual: response.data });
     } catch (error) {
-      console.error("Error al actualizar el turno", error);
+      console.error("Error trying to update shifts", error);
     }
   };
 
   useEffect(() => {
+    if (BoxN !== 4) {
+      const savedState = localStorage.getItem(`veterinario${BoxN}Presente`);
+      if (savedState) {
+        setIsPresent(savedState === "true");
+      }
+    }
+
     fetchData();
   }, []);
 
   useEffect(() => {
-    // Conectar al servidor WebSocket al cargar el componente
-    const socket = io(`${SOCKET}`);
 
-    socket.on("consultarBox", (boxState) => {
-      console.log(boxState);
-      if (boxState[3] == "4") {
-        console.log(boxState);
-        setTurnoState({
+    if (BoxN !== 4) {
+      socketConnection.on("estadoVeterinario", (estado) => {
+        setIsPresent(estado === "presente");
+        localStorage.setItem(`veterinario${BoxN}Presente`, estado);
+      });
+    }
+
+    socketConnection.on("consultarBox", (boxState) => {
+      if (boxState[3] == BoxN) {
+        setTurnState({
           actual: boxState[0],
           siguiente: boxState[1],
         });
-        setCantidadState(boxState[2]);
+        setAmountState(boxState[2]);
       }
     });
 
-    setSocket(socket);
-
     return () => {
-      // Desconectar al desmontar el componente
-      socket.disconnect();
+      socketConnection.disconnect();
     };
   }, []);
+
+  const handlePresentClick = () => {
+    setIsPresent(true);
+    socketConnection?.emit(`veterinario${BoxN}Presente`);
+    localStorage.setItem(`veterinario${BoxN}Presente`, "true");
+  };
+
+  const handleAbsentClick = () => {
+    setIsPresent(false);
+    socketConnection?.emit(`veterinario${BoxN}Ausente`);
+    localStorage.setItem(`veterinario${BoxN}Presente`, "false");
+  };
 
   return (
     <section className="overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-zinc-950 to-black w-full flex items-center mx-auto flex-col h-screen sm:px-16 px-6">
       <div className="flex flex-col gap-20">
         <div className="flex justify-center items-center flex-col gap-5 mt-6">
           <h1 className=" text-white lg:text-[60px] sm:text-[50px] xs:text-[40px] text-[40px] font-bold uppercase text-center">
-            Box Ventas
+            Box {BoxN}
           </h1>
           <div className=" justify-center items-center flex flex-col gap-5">
+            {(BoxN !== 4) ? <><p className=" text-white text-lg">{title}</p>
+              <div className="flex gap-6">
+                <button
+                  onClick={handlePresentClick}
+                  style={{ backgroundColor: isPresent ? "green" : "grey" }}
+                  className="p-3 rounded-lg text-slate-950 font-medium uppercase"
+                >
+                  Present
+                </button>
+                <button
+                  onClick={handleAbsentClick}
+                  style={{ backgroundColor: !isPresent ? "red" : "grey" }}
+                  className="p-3 rounded-lg text-slate-950 font-medium uppercase"
+                >
+                  Absent
+                </button>
+              </div></> : <></>}
             <div className="table-container rounded-lg border-2 border-white mt-5 overflow-hidden">
               <table className="text-white text-lg divide-white divide-y-2 w-full">
                 <thead>
                   <tr>
                     <th className="px-4 py-2 border-r-2 border-white font-normal">
-                      Turno actual
+                      Current Turn
                     </th>
                     <th className="px-4 py-2 border-r-2 border-white font-normal">
-                      Turno siguiente
+                      Next Turn
                     </th>
-                    <th className="px-4 py-2 font-normal">Espera</th>
+                    <th className="px-4 py-2 font-normal">Waiting</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Aca hay que reemplazar por las instancias en tiempo real de los turnos */}
                   <tr>
                     <td className="px-4 py-2 border-r-2 border-white text-center font-bold">
-                      {turnoState.actual?.nombre_turno ?? "NULL"}
+                      {turnState.actual?.nombre_turno ?? "NULL"}
                     </td>
                     <td className="px-4 py-2 border-r-2 border-white text-center font-bold">
-                      {turnoState.siguiente?.nombre_turno ?? "NULL"}
+                      {turnState.siguiente?.nombre_turno ?? "NULL"}
                     </td>
                     <td className="px-4 py-2 text-center font-bold">
-                      {cantidadState ?? "NULL"}
+                      {amountState ?? "NULL"}
                     </td>
                   </tr>
                 </tbody>
@@ -186,22 +220,19 @@ const Box4 = () => {
                 className="p-3 rounded-lg text-slate-950 font-medium uppercase bg-blue-500"
                 onClick={() => start()}
               >
-                {/* UPDATE del estado del turno a iniciado */}
-                Iniciar turno
+                Start Turn
               </button>
               <button
                 className="p-3 rounded-lg text-slate-950 font-medium uppercase bg-yellow-300"
                 onClick={() => end()}
               >
-                {/* UPDATE del estado del turno a finalizado */}
-                Finalizar turno
+                Finish Turn
               </button>
               <button
                 className="p-3 rounded-lg text-slate-950 font-medium uppercase bg-green-400"
                 onClick={() => next()}
               >
-                {/* Acá no se bien que sería pero es para que el veterinario pase al siguiente turno. Creo que se deberia finalizar el turno que esta iniciado. */}
-                Siguiente
+                Next
               </button>
             </div>
           </div>
@@ -211,4 +242,4 @@ const Box4 = () => {
   );
 };
 
-export default Box4;
+export default Box;

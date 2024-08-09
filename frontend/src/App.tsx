@@ -1,39 +1,80 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Totem from "./components/Totem";
-import Veterinarios from "./components/Veterinarios";
-import Ventas from "./components/Ventas";
-import Box1 from "./components/Box1";
-import Box2 from "./components/Box2";
+import Totem from "@/components/Totem";
+import TurnPanel from "@/components/TurnPanel";
+import Box from "@/components/Box";
 import {
-  VeterinarioProvider,
-  Veterinario2Provider,
-} from "./hooks/useEstadoVeterinario";
-import Visor from "./components/Visor";
-import Analytics from "./components/Analytics";
-import Home from "./components/Home";
+  StateProvider,
+} from "@/hooks/useStateProvider";
+import Visor from "@/components/Visor";
+import Analytics from "@/components/Analytics";
+import Home from "@/components/Home";
 import { Toaster } from "react-hot-toast";
-import Box4 from "./components/Box4";
+
+const boxesToShow = [
+  {
+    title: 'Veterinarios',
+    boxesN: 2,
+    shortName: false
+  },
+  {
+    title: 'Ventas',
+    boxesN: 1,
+    shortName: true
+  }
+];
+
+const dataBoxArray = [
+  {
+    ProfessionalID: 1,
+    box: 1,
+    img: "veterinario1.png",
+    alt: 'Veterinario 1',
+  },
+  {
+    ProfessionalID: 2,
+    box: 2,
+    img: "veterinario2.png",
+    alt: 'Veterinario 2',
+  },
+  {
+    ProfessionalID: 3,
+    box: 2,
+    img: "veterinario2.png",
+    alt: 'Veterinario 3',
+  },
+];
+
+const salesDataBox = [
+  {
+    ProfessionalID: 0,
+    box: 4,
+    img: "ventas.png",
+    alt: 'Ventas',
+  }
+];
+
+const routes = [
+  { path: '/', component: <Home /> },
+  { path: '/Totem', component: <Totem /> },
+  { path: '/Visor', component: <Visor boxesToShow={boxesToShow} /> },
+  { path: '/Analytics', component: <Analytics /> },
+  { path: '/Box1', component: <Box BoxN={1} title='Presencia de Veterinario 1' /> },
+  { path: '/Box2', component: <Box BoxN={2} title='Presencia de Veterinario 2' /> },
+  { path: '/Box4', component: <Box BoxN={4} title='Ventas' /> },
+  { path: '/Ventas', component: <TurnPanel dataBoxArray={salesDataBox} numBoxes={0} showSalesCard={true} title="Sales Turns" /> },
+  { path: '/Veterinarios', component: <TurnPanel dataBoxArray={dataBoxArray} numBoxes={2} showSalesCard={false} title="" /> }
+];
 
 function App() {
   return (
-    <VeterinarioProvider>
-      <Veterinario2Provider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/totem" element={<Totem />} />
-            <Route path="/veterinarios" element={<Veterinarios />} />
-            <Route path="/ventas" element={<Ventas />} />
-            <Route path="/box1" element={<Box1 />} />
-            <Route path="/box2" element={<Box2 />} />
-            <Route path="/box4" element={<Box4 />} />
-            <Route path="/visor" element={<Visor />} />
-            <Route path="/analytics" element={<Analytics />} />
-          </Routes>
-          <Toaster />
-        </BrowserRouter>
-      </Veterinario2Provider>
-    </VeterinarioProvider>
+    <StateProvider>
+      <BrowserRouter>
+        <Routes>
+          {routes.map((route, key) => <Route key={key} path={route.path} element={route.component} />)}
+        </Routes>
+        <Toaster />
+      </BrowserRouter>
+    </StateProvider>
   );
 }
 

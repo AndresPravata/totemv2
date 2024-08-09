@@ -1,3 +1,4 @@
+// @ts-ignore
 import { useMemo } from "react";
 import { Bar } from "react-chartjs-2";
 import {
@@ -13,7 +14,7 @@ import Box from "@mui/material/Box";
 import Icon from "@mui/material/Icon";
 import Typography from "@mui/material/Typography";
 import configs from "./configs/config";
-import { BarChartProps } from "@/assets/chartsTypes";
+import { ChartProps } from "@/assets/chartsTypes";
 import colors from "@/assets/colors";
 
 ChartJS.register(
@@ -25,7 +26,7 @@ ChartJS.register(
   Legend
 );
 
-const VerticalBarChart: React.FC<BarChartProps> = ({
+const VerticalBarChart: React.FC<ChartProps> = ({
   icon = { color: "info", component: "" },
   title = "",
   description = "",

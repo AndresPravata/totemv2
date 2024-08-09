@@ -1,3 +1,4 @@
+// @ts-ignore
 import { ChartOptions, ChartData } from 'chart.js';
 import { Chart } from "@/assets/chartsTypes";
 

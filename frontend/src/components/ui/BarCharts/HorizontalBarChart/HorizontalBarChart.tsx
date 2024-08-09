@@ -1,3 +1,4 @@
+// @ts-ignore
 import { useMemo } from "react";
 import { Bar } from "react-chartjs-2";
 import {
@@ -14,7 +15,7 @@ import Icon from "@mui/material/Icon";
 import Box from "@mui/material/Box";
 import { Typography } from "@mui/material";
 import configs from "./configs/config";
-import { BarChartProps } from "@/assets/chartsTypes";
+import { ChartProps } from "@/assets/chartsTypes";
 import colors from "@/assets/colors";
 
 ChartJS.register(
@@ -26,13 +27,14 @@ ChartJS.register(
   Legend
 );
 
-const HorizontalBarChart: React.FC<BarChartProps> = ({
+const HorizontalBarChart: React.FC<ChartProps> = ({
   icon = { color: "info", component: "" },
   title = "",
   description = "",
   height = "19.125rem",
   chart,
   bgColor = "info",
+  boxBgColor = "light",
 }) => {
   const { gradients, coloredShadows } = colors;
 
@@ -110,7 +112,19 @@ const HorizontalBarChart: React.FC<BarChartProps> = ({
     </Box>
   );
 
-  return title || description ? <Card>{renderChart}</Card> : renderChart;
-}
+  return title || description ? (
+    <Card
+      sx={{
+        background: `${gradients[boxBgColor].main}`,
+        borderRadius: "1.5rem",
+        boxShadow: `0rem 0.25rem 1.25rem 0rem ${coloredShadows[bgColor]}`,
+      }}
+    >
+      {renderChart}
+    </Card>
+  ) : (
+    renderChart
+  );
+};
 
 export default HorizontalBarChart;

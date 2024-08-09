@@ -11,12 +11,21 @@ export interface IconProps {
     component?: React.ReactNode;
   }
   
-  export interface BarChartProps {
+  export interface ChartProps {
     icon?: IconProps;
     title?: string;
     description?: string | React.ReactNode;
     height?: string | number;
     chart: Chart;
+    boxBgColor?:
+      | "primary"
+      | "secondary"
+      | "info"
+      | "success"
+      | "warning"
+      | "error"
+      | "dark"
+      | "light";
     bgColor?:
       | "primary"
       | "secondary"
@@ -24,7 +33,8 @@ export interface IconProps {
       | "success"
       | "warning"
       | "error"
-      | "dark";
+      | "dark"
+      | "light";
   }
 
   export interface Dataset {

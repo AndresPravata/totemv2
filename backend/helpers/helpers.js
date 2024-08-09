@@ -13,7 +13,7 @@ export const obtenerInformacionTurno = async () => {
       order: [
         ["nombre_turno", "ASC"],
         ["createdAt", "ASC"],
-      ], // Ordenar por fecha de creación en orden descendente
+      ],
     });
 
     const venta = await Turno.findOne({
@@ -24,13 +24,13 @@ export const obtenerInformacionTurno = async () => {
         },
       },
     });
-    const result = {
-      Box1: turnos[0]?.nombre_turno.startsWith("C") ? null : turnos[0],
-      Box2: turnos[1]?.nombre_turno.startsWith("C") ? null : turnos[1],
-      Ventas: venta,
-    };
 
-    return result;
+    if (venta) {
+      turnos.push(venta);
+    }
+
+    return turnos;
+
   } catch (error) {
     console.error(error);
     throw new Error("Error al obtener la información de los turnos");
@@ -69,12 +69,12 @@ export const obtenerSiguienteTurno = async (filter) => {
   try {
     const siguiente = await Turno.findOne({
       where: {
-        estado: "Espera", // LOS 3 ESTADOS POSIBLES SON: FINALIZADO, ACTUAL, ESPERA
+        estado: "Espera",
         nombre_turno: {
-          [Op.like]: `%${filter}%`, // FILTROS DISPONIBLES: BOX1, BOX2, C
+          [Op.like]: `%${filter}%`,
         },
       },
-      order: [["createdAt", "ASC"]], // Ordenar por fecha de creación en orden descendente
+      order: [["createdAt", "ASC"]],
     });
 
     return siguiente;
@@ -88,12 +88,12 @@ export const obtenerActualTurno = async (filter) => {
   try {
     const actual = await Turno.findOne({
       where: {
-        estado: "Actual", // LOS 3 ESTADOS POSIBLES SON: FINALIZADO, ACTUAL, ESPERA
+        estado: "Actual",
         nombre_turno: {
-          [Op.like]: `%${filter}%`, // FILTROS DISPONIBLES: BOX1, BOX2, C
+          [Op.like]: `%${filter}%`,
         },
       },
-      order: [["createdAt", "ASC"]], // Ordenar por fecha de creación en orden descendente
+      order: [["createdAt", "ASC"]],
     });
 
     return actual;

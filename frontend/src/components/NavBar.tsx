@@ -7,16 +7,23 @@ const NavBar = () => {
   const handleBack = () => {
     navigate("/totem");
   };
+
+  const pageInfo = {
+    title: "Veterinaria Dr.Luffi",
+    logoSrc: "logo.svg",
+    logoAlt: "Flowbite Logo",
+  }
+
   return (
     <nav className="bg-transparent w-full ">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <div className="flex gap-3 justify-center items-center">
-          <img src="logo.svg" className="h-14 w-14" alt="Flowbite Logo" />
+          <img src={pageInfo.logoSrc} className="h-14 w-14" alt={pageInfo.logoAlt} />
           <span
             className="text-md sm:text-2xl font-bold whitespace-nowrap text-white uppercase"
             style={{ WebkitTextStroke: "1.5px black" }}
           >
-            Veterinaria Dr.Luffi
+            {pageInfo.title}
           </span>
         </div>
         <div className=" bg-gray-500 rounded-md bg-clip-padding backdrop-filter backdrop-blur-lg bg-opacity-0 border border-gray-100">

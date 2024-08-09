@@ -1,3 +1,4 @@
+// @ts-ignore
 import { useMemo } from "react";
 import { Bar } from "react-chartjs-2";
 import {
@@ -11,7 +12,7 @@ import {
 } from "chart.js";
 import Box from "@mui/material/Box";
 import configs from "./configs/config";
-import { BarChartProps } from "@/assets/chartsTypes";
+import { ChartProps } from "@/assets/chartsTypes";
 import colors from "@/assets/colors";
 
 ChartJS.register(
@@ -23,7 +24,7 @@ ChartJS.register(
   Legend
 );
 
-const ReportsBarChart: React.FC<BarChartProps> = ({
+const ReportsBarChart: React.FC<ChartProps> = ({
   icon = { color: "info", component: "" },
   title = "",
   description = "",

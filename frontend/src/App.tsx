@@ -58,9 +58,9 @@ const routes = [
   { path: '/Totem', component: <Totem /> },
   { path: '/Visor', component: <Visor boxesToShow={boxesToShow} /> },
   { path: '/Analytics', component: <Analytics /> },
-  { path: '/Box1', component: <Box BoxN={1} title='Presencia de Veterinario 1' /> },
-  { path: '/Box2', component: <Box BoxN={2} title='Presencia de Veterinario 2' /> },
-  { path: '/Box4', component: <Box BoxN={4} title='Ventas' /> },
+  { path: '/Box1', component: <Box boxID={1} title='Presencia de Veterinario ' /> },
+  { path: '/Box2', component: <Box boxID={2} controlPanelN={2} title='Presencia de Veterinario ' /> },
+  { path: '/Box4', component: <Box boxID={4} title='Ventas' /> },
   { path: '/Ventas', component: <TurnPanel dataBoxArray={salesDataBox} numBoxes={0} showSalesCard={true} title="Sales Turns" /> },
   { path: '/Veterinarios', component: <TurnPanel dataBoxArray={dataBoxArray} numBoxes={2} showSalesCard={false} title="" /> }
 ];

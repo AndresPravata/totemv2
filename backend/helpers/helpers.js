@@ -1,4 +1,4 @@
-import { Turno } from "../models/sequelize.js";
+import { Turno, Veterinario } from "../models/sequelize.js";
 import { Op } from "sequelize";
 
 export const obtenerInformacionTurno = async () => {
@@ -16,7 +16,7 @@ export const obtenerInformacionTurno = async () => {
       ],
     });
 
-    const venta = await Turno.findOne({
+    /* const venta = await Turno.findOne({
       where: {
         estado: "Actual",
         nombre_turno: {
@@ -27,7 +27,7 @@ export const obtenerInformacionTurno = async () => {
 
     if (venta) {
       turnos.push(venta);
-    }
+    } */
 
     return turnos;
 
@@ -74,6 +74,11 @@ export const obtenerSiguienteTurno = async (filter) => {
           [Op.like]: `%${filter}%`,
         },
       },
+      include: [{
+        model: Veterinario,
+        as: 'veterinario',
+        attributes: ['nombre']
+      }],
       order: [["createdAt", "ASC"]],
     });
 
@@ -93,6 +98,11 @@ export const obtenerActualTurno = async (filter) => {
           [Op.like]: `%${filter}%`,
         },
       },
+      include: [{
+        model: Veterinario,
+        as: 'veterinario',
+        attributes: ['nombre']
+      }],
       order: [["createdAt", "ASC"]],
     });
 

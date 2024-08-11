@@ -24,8 +24,6 @@ export const StateProvider = ({ children }: ProviderProps) => {
   const [cardState, setCardState] = useState(initialState);
 
   useEffect(() => {
-    const handlers: (() => void)[] = [];
-
     for (let i = 1; i <= numCards; i++) {
       const handler = (estado: string) => {
         setCardState((prevState) => ({
@@ -34,13 +32,7 @@ export const StateProvider = ({ children }: ProviderProps) => {
         }));
       };
       socketConnection.on(`cardState${i}`, handler);
-      handlers.push(() => socketConnection.off(`cardState${i}`, handler));
     }
-
-    return () => {
-      handlers.forEach((disconnect) => disconnect());
-      socketConnection.disconnect();
-    };
   }, []);
 
   return (

@@ -71,11 +71,12 @@ const TurnPanel: React.FC<TurnPanelProps> = ({ dataBoxArray, numBoxes, showSales
       );
 
       amounts = responses.map(response => response.data);
+      console.log(amounts);
 
       if (showSalesCard) {
         const salesAmount = await axios.get(`${HOST}/turnos/cantidadTurnos/4`);
 
-        amounts.push(salesAmount);
+        amounts.push(salesAmount.data);
       }
 
       setAmountState(amounts);
@@ -96,12 +97,12 @@ const TurnPanel: React.FC<TurnPanelProps> = ({ dataBoxArray, numBoxes, showSales
 
     if (cardSelected.card === ProfessionalID) {
       setCardSelected({ card: null, box: null });
-      localStorage.removeItem("veterinario");
+      localStorage.removeItem("card");
     }
 
     else {
       setCardSelected({ card: ProfessionalID, box: boxN });
-      localStorage.setItem("veterinario", `${ProfessionalID}`);
+      localStorage.setItem("card", `${ProfessionalID}`);
     }
 
     setTimeout(() => {
@@ -181,7 +182,7 @@ const TurnPanel: React.FC<TurnPanelProps> = ({ dataBoxArray, numBoxes, showSales
           className=" uppercase font-bold text-2xl text-white"
           style={{ WebkitTextStroke: "1.5px black" }}
         >
-          Waiting Turns: {amountState[box - 1]}
+          Waiting Turns: {(box === 4 && ProfessionalID === 0) ? amountState[amountState.length - 1] : amountState[box - 1]}
         </p>
       </div>
     )

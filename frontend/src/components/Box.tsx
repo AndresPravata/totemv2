@@ -9,6 +9,9 @@ export interface Turn {
   createdAt: Date;
   fecha_hora_inicio: Date;
   fecha_hora_fin: Date;
+  veterinario?: {
+    nombre: string | null;
+  }
   estado: string;
 }
 
@@ -18,12 +21,14 @@ interface TurnState {
 }
 
 interface BoxProps {
-  BoxN: number;
+  boxID: number;
+  controlPanelN?: number;
   title: string;
 }
 
-const Box: React.FC<BoxProps> = ({ BoxN, title }) => {
-  const [isPresent, setIsPresent] = useState(false);
+const Box: React.FC<BoxProps> = ({ boxID, controlPanelN = 1, title }) => {
+  const cardStateArray = Array(boxID + controlPanelN).fill(false);
+  const [isPresent, setIsPresent] = useState(cardStateArray);
   const [amountState, setAmountState] = useState(0);
   const [turnState, setTurnState] = useState<TurnState>({
     actual: null,
@@ -32,8 +37,8 @@ const Box: React.FC<BoxProps> = ({ BoxN, title }) => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get(`${HOST}/turnos/turnosBox/BOX${BoxN === 4 ? 'C' : BoxN}`);
-      const cantidad = await axios.get(`${HOST}/turnos/cantidadTurnos/${BoxN}`);
+      const response = await axios.get(`${HOST}/turnos/turnosBox/BOX${boxID === 4 ? 'C' : boxID}`);
+      const cantidad = await axios.get(`${HOST}/turnos/cantidadTurnos/${boxID}`);
 
       setAmountState(cantidad.data);
 
@@ -116,27 +121,38 @@ const Box: React.FC<BoxProps> = ({ BoxN, title }) => {
   };
 
   useEffect(() => {
-    if (BoxN !== 4) {
-      const savedState = localStorage.getItem(`veterinario${BoxN}Presente`);
-      if (savedState) {
-        setIsPresent(savedState === "true");
-      }
+    if (boxID !== 4) {
+      isPresent.forEach((value, key) => {
+        if (key >= boxID) {
+          let savedState = localStorage.getItem(`cardN${key}`);
+          setIsPresent(prevState => {
+            const newState = [...prevState];
+            newState[key] = savedState === 'present';
+            return newState;
+          });
+        }
+      });
     }
 
     fetchData();
   }, []);
 
   useEffect(() => {
-
-    if (BoxN !== 4) {
-      socketConnection.on("estadoVeterinario", (estado) => {
-        setIsPresent(estado === "presente");
-        localStorage.setItem(`veterinario${BoxN}Presente`, estado);
+    /* if (boxID !== 4) {
+      Array(controlPanelN).fill(0).forEach((value, key) => {
+        socketConnection.on(`cardState${boxID + key}`, (connState) => {
+          setIsPresent(prevState => {
+            const newState = [...prevState];
+            newState[boxID + key] = connState === 'present';
+            return newState;
+          });
+          localStorage.setItem(`cardN${boxID + key}`, connState);
+        });
       });
-    }
+    } */
 
     socketConnection.on("consultarBox", (boxState) => {
-      if (boxState[3] == BoxN) {
+      if (boxState[3] == boxID) {
         setTurnState({
           actual: boxState[0],
           siguiente: boxState[1],
@@ -144,22 +160,26 @@ const Box: React.FC<BoxProps> = ({ BoxN, title }) => {
         setAmountState(boxState[2]);
       }
     });
-
-    return () => {
-      socketConnection.disconnect();
-    };
   }, []);
 
-  const handlePresentClick = () => {
-    setIsPresent(true);
-    socketConnection?.emit(`veterinario${BoxN}Presente`);
-    localStorage.setItem(`veterinario${BoxN}Presente`, "true");
+  const handlePresentClick = (ProfessionalID = 0) => {
+    setIsPresent(prevState => {
+      const newState = [...prevState];
+      newState[ProfessionalID + boxID] = true;
+      return newState;
+    });
+    socketConnection?.emit(`cardOn`, boxID + ProfessionalID);
+    localStorage.setItem(`cardN${boxID + ProfessionalID}`, "present");
   };
 
-  const handleAbsentClick = () => {
-    setIsPresent(false);
-    socketConnection?.emit(`veterinario${BoxN}Ausente`);
-    localStorage.setItem(`veterinario${BoxN}Presente`, "false");
+  const handleAbsentClick = (ProfessionalID = 0) => {
+    setIsPresent(prevState => {
+      const newState = [...prevState];
+      newState[ProfessionalID + boxID] = false;
+      return newState;
+    });
+    socketConnection?.emit(`cardOff`, boxID + ProfessionalID);
+    localStorage.setItem(`cardN${boxID + ProfessionalID}`, "absent");
   };
 
   return (
@@ -167,26 +187,34 @@ const Box: React.FC<BoxProps> = ({ BoxN, title }) => {
       <div className="flex flex-col gap-20">
         <div className="flex justify-center items-center flex-col gap-5 mt-6">
           <h1 className=" text-white lg:text-[60px] sm:text-[50px] xs:text-[40px] text-[40px] font-bold uppercase text-center">
-            Box {BoxN}
+            Box {boxID}
           </h1>
           <div className=" justify-center items-center flex flex-col gap-5">
-            {(BoxN !== 4) ? <><p className=" text-white text-lg">{title}</p>
-              <div className="flex gap-6">
-                <button
-                  onClick={handlePresentClick}
-                  style={{ backgroundColor: isPresent ? "green" : "grey" }}
-                  className="p-3 rounded-lg text-slate-950 font-medium uppercase"
-                >
-                  Present
-                </button>
-                <button
-                  onClick={handleAbsentClick}
-                  style={{ backgroundColor: !isPresent ? "red" : "grey" }}
-                  className="p-3 rounded-lg text-slate-950 font-medium uppercase"
-                >
-                  Absent
-                </button>
-              </div></> : <></>}
+            <div className=" justify-center items-center flex gap-5">
+              {Array(controlPanelN).fill(0).map((value, key) => {
+                return (
+                  <div key={key}>
+                    {(boxID !== 4) ? <><p className=" text-white text-lg">{title + (boxID + key)}</p>
+                      <div className="flex gap-6">
+                        <button
+                          onClick={() => handlePresentClick(key)}
+                          style={{ backgroundColor: isPresent[boxID + key] ? "green" : "grey" }}
+                          className="p-3 rounded-lg text-slate-950 font-medium uppercase"
+                        >
+                          Present
+                        </button>
+                        <button
+                          onClick={() => handleAbsentClick(key)}
+                          style={{ backgroundColor: !isPresent[boxID + key] ? "red" : "grey" }}
+                          className="p-3 rounded-lg text-slate-950 font-medium uppercase"
+                        >
+                          Absent
+                        </button>
+                      </div></> : <></>}
+                  </div>
+                );
+              })}
+            </div>
             <div className="table-container rounded-lg border-2 border-white mt-5 overflow-hidden">
               <table className="text-white text-lg divide-white divide-y-2 w-full">
                 <thead>
@@ -212,6 +240,17 @@ const Box: React.FC<BoxProps> = ({ BoxN, title }) => {
                       {amountState ?? "NULL"}
                     </td>
                   </tr>
+                  {(boxID !== 4) ? <tr>
+                    <td className="px-4 py-2 border-r-2 border-white text-center font-bold">
+                      {turnState.actual?.veterinario?.nombre ?? "NULL"}
+                    </td>
+                    <td className="px-4 py-2 border-r-2 border-white text-center font-bold">
+                      {turnState.siguiente?.veterinario?.nombre ?? "NULL"}
+                    </td>
+                    <td className="px-4 py-2 text-center font-bold">
+                      {amountState ?? "NULL"}
+                    </td>
+                  </tr> : <></>}
                 </tbody>
               </table>
             </div>

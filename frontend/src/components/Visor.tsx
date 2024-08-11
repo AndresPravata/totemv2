@@ -28,6 +28,7 @@ const Visor: React.FC<{ boxesToShow: Box[] }> = ({ boxesToShow }) => {
   const videoRef = useRef(null);
   const [turnState, setTurnState] = useState<Turn[]>([]);
   const videoPath = '/visor-video.mp4';
+  let stateKey = 0;
 
   const fetchData = async () => {
     try {
@@ -39,11 +40,6 @@ const Visor: React.FC<{ boxesToShow: Box[] }> = ({ boxesToShow }) => {
   };
 
   useEffect(() => {
-
-    socketConnection.on("connect", () => {
-      console.log("Conexión socketConnection.IO establecida con éxito");
-    });
-
     socketConnection.on("consultarTurnos", (turnos: Turn[]) => {
       let cambioTurno = turnos
         .map(({ nombre_turno }: Turn) => {
@@ -73,14 +69,6 @@ const Visor: React.FC<{ boxesToShow: Box[] }> = ({ boxesToShow }) => {
         playTurnChangeSound(box, letra);
       }, 2000);
     });
-
-    socketConnection.on("disconnect", () => {
-      console.log("Desconexión socketConnection.IO");
-    });
-
-    return () => {
-      socketConnection.disconnect();
-    };
   }, []);
 
   useEffect(() => {
@@ -92,22 +80,27 @@ const Visor: React.FC<{ boxesToShow: Box[] }> = ({ boxesToShow }) => {
     fetchData();
   }, []);
 
+  console.log(turnState);
   return (
     <div className="flex h-screen">
       <div className="w-[23%] bg-gray-800 text-white p-4 overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-zinc-950 to-black text-center gap-12 flex flex-col justify-center">
         <div className="flex flex-col gap-9 ml-10">
-          {boxesToShow.map((box, key) => (
-            <div className="flex flex-col" key={key}>
-              <h2 className="text-4xl mb-2 font-semibold uppercase z-50">
-                {box.title}
-              </h2>
-              {Array.from({ length: box.boxesN }, (_, i) => (
-                <div key={i+10} className="rounded-2xl border-2 text-4xl border-white p-6 my-2 font-bold">
-                  {box.shortName ? turnState[i]?.nombre_turno?.substring(0, turnState[i].nombre_turno?.indexOf('BOX')) : turnState[i]?.nombre_turno}
-                </div>
-              ))}
-            </div>
-          ))}
+          {boxesToShow.map((box, key) => {
+            return (
+              <div className="flex flex-col" key={key}>
+                <h2 className="text-4xl mb-2 font-semibold uppercase z-50">
+                  {box.title}
+                </h2>
+                {Array.from({ length: box.boxesN }, (_, i) => {
+                  return (<div key={i + 10} className="rounded-2xl border-2 text-4xl border-white p-6 my-2 font-bold">
+                    {box.shortName ? turnState[stateKey + i]?.nombre_turno?.substring(0, turnState[stateKey + i].nombre_turno?.indexOf('BOX')) : turnState[stateKey + i]?.nombre_turno}
+                  </div>);
+                })}
+                {stateKey += box.boxesN}
+              </div>
+            );
+          }
+          )}
         </div>
       </div>
       <div className="w-[80%] g-gray-800 text-white p-4 overflow-hidden bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-900 via-zinc-950 to-black text-center">

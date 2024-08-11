@@ -42,9 +42,9 @@ const Totem = () => {
         </div>
 
         <div className="flex items-center justify-center gap-10 flex-col xs:flex-row">
-          {routes.map((route) => {
+          {routes.map((route, key) => {
             return (
-              <div className="grid gap-8 items-start justify-center">
+              <div key={key} className="grid gap-8 items-start justify-center">
                 <div className="h-full w-full bg-gray-500 rounded-md bg-clip-padding backdrop-filter backdrop-blur-lg bg-opacity-0 border border-gray-100">
                   <div className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-gray-600 to-sky-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-500 group-hover:duration-500  animate-tilt"></div>
